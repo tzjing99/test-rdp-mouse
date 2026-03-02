@@ -82,15 +82,23 @@
       </div>
 
       <p class="bug-desc" *ngIf="bugMode">
-        Click <strong>View Details</strong> on row ORD-003. The component tries to read
-        <code>modalBodyRef.nativeElement.getBoundingClientRect().width</code>
-        <em>before</em> setting <code>isModalOpen = true</code>, so the <code>*ngIf</code>
-        hasn't rendered the element yet → <code>@ViewChild</code> is <strong>undefined</strong>
-        → <strong>TypeError: Cannot read properties of undefined (reading 'nativeElement')</strong>.
+        <strong>Faithful EPF reproduction.</strong> Row ORD-003's <code>View Details</code> button
+        is wrapped in <code>*ngIf="isRowHovered"</code> — it only enters the DOM after
+        <code>mouseenter</code> fires. The <code>@ViewChild('viewBtn')</code> reference is
+        therefore <strong>undefined</strong> until the mouse hovers the row.
+        <br><br>
+        <strong>Native mouse path:</strong> cursor moves over row &rarr;
+        <code>mouseenter</code> fires &rarr; <code>isRowHovered = true</code> &rarr;
+        button renders &rarr; click &rarr; <code>viewBtnRef</code> exists &rarr; ✅ works.<br>
+        <strong>EPF / SenseTalk path:</strong> jump-click, no prior hover &rarr;
+        <code>mouseenter</code> never fires &rarr; <code>isRowHovered = false</code> &rarr;
+        button NOT in DOM &rarr; <code>viewBtnRef</code> is <code>undefined</code> &rarr;
+        ❌ <strong>TypeError: Cannot read properties of undefined (reading 'width')</strong>.
       </p>
       <p class="bug-desc fixed" *ngIf="!bugMode">
-        Fixed: <code>isModalOpen = true</code> is set first, then dimensions are read inside
-        <code>setTimeout(0)</code> so Angular can render the element before being accessed.
+        <strong>Fixed pattern:</strong> always set <code>isModalOpen = true</code> first so
+        Angular renders the element, then read its dimensions inside
+        <code>setTimeout(0)</code> — after change detection has run.
       </p>
 
       <!-- Error banner ────────────────────────────────────────────────── -->
@@ -98,7 +106,7 @@
         <span class="error-icon">⛔</span>
         <div>
           <strong>Uncaught TypeError:</strong> {{ lastError }}<br>
-          <small>at openModal() — same stack as customer's Angular 14 app</small>
+          <small>at openModal() — EPF skipped mouseenter so viewBtnRef was never rendered</small>
         </div>
       </div>
 
@@ -114,6 +122,9 @@
           <tbody>
             <tr *ngFor="let order of orders"
               [class.special-row]="order.isSpecialRow"
+              [class.row-hovered]="order.isSpecialRow && isRowHovered"
+              (mouseenter)="order.isSpecialRow && onRowMouseEnter(order)"
+              (mouseleave)="order.isSpecialRow && onRowMouseLeave()"
               [attr.data-order-id]="order.id"
               [attr.data-testid]="order.isSpecialRow ? 'modal-trigger-row' : null">
               <td>{{ order.id }}</td>
@@ -127,13 +138,22 @@
                 </span>
               </td>
               <td>
-                <button *ngIf="order.isSpecialRow"
+                <!-- KEY: button only exists in DOM when row is hovered -->
+                <!-- Native mouse: hover fires mouseenter → button renders → @ViewChild resolves -->
+                <!-- EPF jump-click: no hover → button never renders → @ViewChild = undefined -->
+                <button *ngIf="order.isSpecialRow && isRowHovered"
+                  #viewBtn
                   class="btn-primary"
                   id="btn-view-details"
                   data-testid="btn-view-details"
                   (click)="openModal(order, $event)">
                   View Details
                 </button>
+                <span *ngIf="order.isSpecialRow && !isRowHovered"
+                  class="hover-hint"
+                  data-testid="hover-hint-ord003">
+                  ← hover to reveal button
+                </span>
                 <span *ngIf="!order.isSpecialRow" style="color:#aaa">—</span>
               </td>
             </tr>

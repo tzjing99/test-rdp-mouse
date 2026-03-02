@@ -55,15 +55,23 @@ export class AppComponent implements OnInit, OnDestroy {
   private logId = 0;
 
   // ── Modal: ViewChild references ────────────────────────────────────────────
-  // #modalBody is inside *ngIf="isModalOpen" — it is UNDEFINED while modal is closed.
-  // Accessing it before isModalOpen = true reproduces the customer's JS error.
+  // #modalBody is inside *ngIf="isModalOpen" — undefined while modal is closed.
   @ViewChild('modalBody') modalBodyRef?: ElementRef;
 
+  // KEY REPRODUCTION:
+  // #viewBtn is inside *ngIf="isRowHovered" — it only enters the DOM after mouseenter.
+  // Native mouse always hovers before click → ref exists.
+  // EPF jump-clicks without hover → ref is UNDEFINED → crash.
+  @ViewChild('viewBtn') viewBtnRef?: ElementRef;
+
   isModalOpen = false;
+  isRowHovered = false;       // tracks whether the special row is currently hovered
   selectedOrder: Order | null = null;
 
   // ── Bug-reproduction toggle ────────────────────────────────────────────────
-  bugMode = true;   // true = reproduce the crash, false = correct Angular pattern
+  // bugMode ON  = faithful customer reproduction (hover-gated ViewChild crash)
+  // bugMode OFF = correct pattern: read ref inside setTimeout(0) after *ngIf renders
+  bugMode = true;
   lastError: string | null = null;
 
   // ── Orders table ───────────────────────────────────────────────────────────
@@ -144,44 +152,63 @@ export class AppComponent implements OnInit, OnDestroy {
     this.markerTimers.forEach(t => clearTimeout(t));
   }
 
+  // ── Hover tracking on the special row ────────────────────────────────────
+  onRowMouseEnter(order: Order): void {
+    this.isRowHovered = true;
+    this.addLog('mouseenter', `Hovered over ${order.id} — #viewBtn NOW in DOM`, 'info');
+  }
+
+  onRowMouseLeave(): void {
+    this.isRowHovered = false;
+    this.addLog('mouseleave', 'Left row — #viewBtn REMOVED from DOM', 'info');
+  }
+
   // ── Modal: reproduces / fixes the ViewChild crash ─────────────────────────
   openModal(order: Order, event: MouseEvent): void {
     event.stopPropagation();
     this.lastError = null;
 
+    const hoverState = this.isRowHovered ? 'YES (hovered)' : 'NO (no prior hover — EPF path)';
+    this.addLog('row-hover-state',
+      `isRowHovered = ${this.isRowHovered} | viewBtnRef = ${this.viewBtnRef ? 'EXISTS' : 'UNDEFINED'}`,
+      this.isRowHovered ? 'info' : 'warn');
+
     if (this.bugMode) {
-      // ⚠ BUG REPRODUCTION:
-      // modalBodyRef is inside *ngIf="isModalOpen" which is still FALSE here.
-      // Angular has NOT rendered #modalBody yet → it is undefined.
-      // Accessing .nativeElement crashes exactly like the customer's app.
+      // ⚠ FAITHFUL CUSTOMER REPRODUCTION:
+      // #viewBtn is guarded by *ngIf="isRowHovered".
+      // - Native mouse: always passes through mouseenter → isRowHovered=true → ref exists
+      // - EPF jump-click: skips hover → isRowHovered=false → viewBtnRef is UNDEFINED
+      // Reading .nativeElement.getBoundingClientRect().width crashes exactly
+      // like the customer's: "Cannot read properties of undefined (reading 'width')"
       try {
-        const width = (this.modalBodyRef as any).nativeElement.getBoundingClientRect().width;
-        this.addLog('modal-width', `Modal body width = ${width}px`, 'info');
+        const width = (this.viewBtnRef as any).nativeElement.getBoundingClientRect().width;
+        this.addLog('modal-width', `Button width = ${width}px (hovered before click ✅)`, 'success');
       } catch (err: any) {
         this.lastError = err.message;
         this.addLog('angular-error',
-          `Uncaught TypeError: ${err.message}  ← same crash as customer app`,
+          `⛔ TypeError: ${err.message}  ← EPF skipped hover, viewBtnRef is undefined`,
           'error');
-        console.error('%c⛔ Angular Error reproduced:', 'color:red;font-weight:bold', err);
+        console.error('%c⛔ Customer bug reproduced:', 'color:red;font-weight:bold', err);
       }
     }
 
-    // Whether buggy or not, open the modal afterwards
+    // Open the modal regardless
     this.isModalOpen = true;
     this.selectedOrder = order;
 
     if (!this.bugMode) {
-      // ✅ CORRECT PATTERN: read dimensions AFTER the view has updated
-      // Use setTimeout(0) so Angular renders *ngIf first
+      // ✅ CORRECT PATTERN:
+      // 1. Set isModalOpen = true first (renders #modalBody via *ngIf)
+      // 2. Read dimensions in setTimeout(0) — after Angular's change detection
       setTimeout(() => {
         if (this.modalBodyRef) {
           const width = this.modalBodyRef.nativeElement.getBoundingClientRect().width;
-          this.addLog('modal-width', `✅ Modal body width = ${width}px (correct timing)`, 'success');
+          this.addLog('modal-width', `✅ Modal width = ${width}px (correct timing)`, 'success');
         }
       }, 0);
     }
 
-    this.addLog('modal-open', `Modal opened for ${order.id} (bugMode=${this.bugMode})`,
+    this.addLog('modal-open', `Modal opened for ${order.id} [hover=${hoverState}]`,
       this.lastError ? 'warn' : 'success');
   }
 
