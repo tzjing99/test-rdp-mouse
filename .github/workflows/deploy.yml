@@ -33,14 +33,14 @@ jobs:
         run: npm ci --prefer-offline --no-audit --progress=false
 
       - name: Build
-        run: npm run build -- --configuration production
+        run: npm run build -- --configuration production --base-href "/test-rdp-mouse/"
 
       - name: Clear old docs folder
         run: rm -rf docs
 
       - name: Copy build output to docs/
         run: |
-          cp -r ./dist/rdp-mouse-test ./docs
+          cp -r ./dist/rdp-mouse-test/. ./docs
           touch ./docs/.nojekyll
 
       - name: Commit and push to main
