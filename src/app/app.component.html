@@ -1,0 +1,111 @@
+<div class="app-container">
+
+  <h1>{{ title }}</h1>
+  <p class="subtitle">
+    Angular 14 &ndash; Reproduces EPF / SenseTalk RDP mouse-click issue on modal-opening table row
+  </p>
+
+  <!-- ===================== ORDER TABLE ===================== -->
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let order of orders"
+          [class.special-row]="order.isSpecialRow"
+          (mouseenter)="onRowMouseEnter(order)"
+          (pointerdown)="onRowPointerDown($event, order)"
+          [attr.data-order-id]="order.id"
+          [attr.data-testid]="order.isSpecialRow ? 'modal-trigger-row' : null">
+
+          <td>{{ order.id }}</td>
+          <td>{{ order.customer }}</td>
+          <td>{{ order.product }}</td>
+          <td>{{ order.qty }}</td>
+          <td>{{ order.amount | currency }}</td>
+          <td>
+            <span class="badge" [ngClass]="'badge-' + order.status.toLowerCase()">
+              {{ order.status }}
+            </span>
+          </td>
+          <td>
+            <button
+              *ngIf="order.isSpecialRow"
+              class="view-btn"
+              id="btn-view-details"
+              data-testid="btn-view-details"
+              (click)="openModal(order, $event)">
+              View Details
+            </button>
+            <span *ngIf="!order.isSpecialRow" style="color:#bbb;font-size:0.8rem">&#8212;</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== MODAL OVERLAY ===================== -->
+  <div
+    class="modal-overlay"
+    id="order-modal-overlay"
+    *ngIf="isModalOpen"
+    (click)="closeModal()">
+
+    <div class="modal-window" (click)="stopProp($event)">
+      <div class="modal-header">
+        <h2>Order Details &#8212; {{ selectedOrder?.id }}</h2>
+        <button class="close-btn" (click)="closeModal()" title="Close">&times;</button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedOrder">
+        <dl>
+          <dt>Order ID</dt>       <dd>{{ selectedOrder.id }}</dd>
+          <dt>Customer</dt>       <dd>{{ selectedOrder.customer }}</dd>
+          <dt>Product</dt>        <dd>{{ selectedOrder.product }}</dd>
+          <dt>Quantity</dt>       <dd>{{ selectedOrder.qty }}</dd>
+          <dt>Amount</dt>         <dd>{{ selectedOrder.amount | currency }}</dd>
+          <dt>Status</dt>
+          <dd>
+            <span class="badge" [ngClass]="'badge-' + selectedOrder.status.toLowerCase()">
+              {{ selectedOrder.status }}
+            </span>
+          </dd>
+          <dt>Details</dt>        <dd>{{ selectedOrder.details }}</dd>
+        </dl>
+      </div>
+
+      <div class="modal-footer">
+        <button (click)="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== EVENT LOG ===================== -->
+  <div class="log-panel">
+    <h3>
+      Live Event Log (diagnostic)
+      <button class="clear-btn" (click)="clearLog()">Clear</button>
+    </h3>
+    <div class="log-entries">
+      <div *ngFor="let entry of eventLog" class="log-entry">
+        <span class="log-time">{{ entry.time }}</span>
+        <span class="log-type">{{ entry.type }}</span>
+        <span class="log-msg">{{ entry.message }}</span>
+      </div>
+      <div *ngIf="eventLog.length === 0" class="empty-log">
+        No events yet. Hover or click a table row to begin.
+      </div>
+    </div>
+  </div>
+
+</div>
