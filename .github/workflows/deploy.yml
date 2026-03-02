@@ -39,7 +39,9 @@ jobs:
         run: rm -rf docs
 
       - name: Copy build output to docs/
-        run: cp -r ./dist/rdp-mouse-test ./docs
+        run: |
+          cp -r ./dist/rdp-mouse-test ./docs
+          touch ./docs/.nojekyll
 
       - name: Commit and push to main
         run: |
