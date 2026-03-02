@@ -1,4 +1,4 @@
-name: Deploy Angular app to GitHub Pages
+name: Build and Deploy Angular app
 
 on:
   push:
@@ -13,9 +13,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: true
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -38,14 +35,20 @@ jobs:
       - name: Build
         run: npm run build -- --configuration production
 
-      - name: List build output (debug)
-        run: |
-          echo "Dist contents:"
-          ls -la ./dist || true
-          ls -la ./dist/rdp-mouse-test || true
+      - name: Clear old docs folder
+        run: rm -rf docs
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist/rdp-mouse-test
+      - name: Copy build output to docs/
+        run: cp -r ./dist/rdp-mouse-test ./docs
+
+      - name: Commit and push to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "ci: publish app to docs/"
+            git push
+          fi
