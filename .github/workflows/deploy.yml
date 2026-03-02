@@ -16,11 +16,27 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Cache npm
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --progress=false
 
       - name: Build
         run: npm run build -- --configuration production
+
+      - name: List build output (debug)
+        run: |
+          echo "Dist contents:"
+          ls -la ./dist || true
+          ls -la ./dist/rdp-mouse-test || true
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
