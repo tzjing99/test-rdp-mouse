@@ -9,12 +9,11 @@
   <div class="main">
 
     <div class="intro">
-      <p>This button detects <strong>how</strong> it was clicked.</p>
+      <p>This button detects <strong>how</strong> it was clicked — works for both element-based and <strong>image-based</strong> EPF.</p>
       <ul>
-        <li>A <strong>human</strong> always moves the mouse over the button first &mdash;
-            <code>mouseenter</code> fires before <code>click</code> &rarr; <strong style="color:#22c55e">PASS</strong>.</li>
-        <li><strong>EPF</strong> teleports directly to the click coordinate &mdash;
-            <code>mouseenter</code> never fires &rarr; <strong style="color:#ef4444">FAIL / TypeError</strong>.</li>
+        <li>A <strong>human</strong> moves the mouse naturally &mdash; many <code>mousemove</code> events fire on the way &rarr; <strong style="color:#22c55e">PASS</strong>.</li>
+        <li><strong>EPF (element-based)</strong> jumps directly &mdash; <code>mouseenter</code> never fires &rarr; <strong style="color:#ef4444">FAIL</strong>.</li>
+        <li><strong>EPF (image-based)</strong> teleports cursor to centre &mdash; <code>mouseenter</code> fires but <strong>zero <code>mousemove</code></strong> events &rarr; <strong style="color:#ef4444">FAIL</strong>.</li>
       </ul>
     </div>
 
@@ -24,10 +23,11 @@
         data-testid="detect-btn"
         (mouseenter)="onBtnMouseEnter()"
         (mouseleave)="onBtnMouseLeave()"
+        (mousemove)="onBtnMouseMove()"
         (click)="onBtnClick()">
         Click Me
       </button>
-      <p class="btn-hint">EPF script: use <code>data-testid="detect-btn"</code></p>
+      <p class="btn-hint">EPF image target: the blue <strong>Click Me</strong> button &nbsp;|&nbsp; element: <code>data-testid="detect-btn"</code></p>
     </div>
 
     <div class="result result-idle" *ngIf="result === null">
@@ -39,7 +39,8 @@
       <span class="result-icon">&#x2705;</span>
       <div>
         <div class="result-title">PASS &mdash; Human Click</div>
-        <div class="result-msg"><code>mouseenter</code> fired before <code>click</code> &mdash; mouse moved over the button naturally.</div>
+        <div class="result-msg"><code>mouseenter</code> fired and natural mouse movement detected &mdash; this is a real human click.</div>
+        <div class="result-dbg" *ngIf="debugInfo">{{ debugInfo }}</div>
       </div>
     </div>
 
@@ -47,7 +48,8 @@
       <span class="result-icon">&#x274C;</span>
       <div>
         <div class="result-title">FAIL &mdash; EPF Click Detected</div>
-        <div class="result-msg"><code>mouseenter</code> did NOT fire &mdash; EPF teleported directly, skipping hover.</div>
+        <div class="result-msg">No natural mouse movement detected &mdash; EPF teleported cursor (image-based) or skipped hover entirely (element-based).</div>
+        <div class="result-dbg" *ngIf="debugInfo">{{ debugInfo }}</div>
         <div class="result-err" *ngIf="lastError">TypeError: {{ lastError }}</div>
       </div>
     </div>
