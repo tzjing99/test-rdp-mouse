@@ -163,6 +163,16 @@ export class AppComponent implements OnInit, OnDestroy {
     this.addLog('mouseleave', 'Left row — #viewBtn REMOVED from DOM', 'info');
   }
 
+  // ── Simulate EPF jump-click (no hover, button never in DOM) ───────────────
+  simulateEpfClick(order: Order, event: MouseEvent): void {
+    event.stopPropagation();
+    // Force hover state OFF — viewBtnRef will be undefined (button not in DOM)
+    this.isRowHovered = false;
+    this.cdr.detectChanges();
+    this.addLog('EPF-simulate', `⚡ Simulating EPF jump-click on ${order.id} — isRowHovered forced to false`, 'warn');
+    this.openModal(order, event);
+  }
+
   // ── Modal: reproduces / fixes the ViewChild crash ─────────────────────────
   openModal(order: Order, event: MouseEvent): void {
     event.stopPropagation();

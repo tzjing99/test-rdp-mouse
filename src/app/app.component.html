@@ -114,16 +114,22 @@
                 <span class="chip" [ngClass]="'chip-' + order.status.toLowerCase()">{{ order.status }}</span>
               </td>
               <td class="td-action">
-                <button *ngIf="order.isSpecialRow && isRowHovered"
-                  #viewBtn class="btn-primary"
-                  id="btn-view-details"
-                  data-testid="btn-view-details"
-                  (click)="openModal(order, $event)">
-                  View Details
-                </button>
-                <span *ngIf="order.isSpecialRow && !isRowHovered" class="hover-hint">
-                  &larr; hover row to reveal
-                </span>
+                <ng-container *ngIf="order.isSpecialRow">
+                  <!-- Always visible: EPF simulation button -->
+                  <button class="btn-epf" (click)="simulateEpfClick(order, $event)"
+                    title="Simulates EPF jump-click — no hover, button never in DOM">
+                    ⚡ Simulate EPF
+                  </button>
+                  <!-- Only visible after hover: the real button -->
+                  <button *ngIf="isRowHovered"
+                    #viewBtn class="btn-primary"
+                    id="btn-view-details"
+                    data-testid="btn-view-details"
+                    (click)="openModal(order, $event)">
+                    View Details
+                  </button>
+                  <span *ngIf="!isRowHovered" class="hover-hint">&larr; hover to reveal</span>
+                </ng-container>
                 <span *ngIf="!order.isSpecialRow" class="td-dash">&mdash;</span>
               </td>
             </tr>
