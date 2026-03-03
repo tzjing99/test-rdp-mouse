@@ -11,11 +11,7 @@ const HUMAN_MOVE_THRESHOLD = 3;
 
 export class AppComponent {
 
-  // true while the cursor is physically over the button
-  private _mouseOnBtn = false;
-  // true only for the FIRST entry after the mouse was outside (fresh hover)
-  private _freshEntry = false;
-  // mousemove events counted since the last mouseenter
+  // Counts mousemove events since the last click (or page load)
   private _moveCnt = 0;
 
   result: string | null = null;
@@ -23,14 +19,11 @@ export class AppComponent {
   debugInfo: string | null = null;
 
   onBtnMouseEnter(): void {
-    this._mouseOnBtn = true;
-    this._freshEntry = true;   // new hover pass → needs move verification
+    // entering fresh — reset so only moves AFTER entry count
     this._moveCnt = 0;
   }
 
   onBtnMouseLeave(): void {
-    this._mouseOnBtn = false;
-    this._freshEntry = false;
     this._moveCnt = 0;
   }
 
@@ -40,17 +33,12 @@ export class AppComponent {
 
   onBtnClick(): void {
     this.lastError = null;
-    const entered = this._mouseOnBtn;
-    const fresh   = this._freshEntry;
-    const moves   = this._moveCnt;
-    this.debugInfo = `mouseenter=${entered}, fresh=${fresh}, mousemove count=${moves}`;
+    const moves = this._moveCnt;
+    this.debugInfo = `mousemove count=${moves}`;
 
-    // Human if:
-    //   a) fresh hover AND enough move events (natural mouse drag onto button), OR
-    //   b) already sitting on the button from a previous verified click (not fresh)
-    // EPF image-based: fresh=true but moves=0 (cursor teleported, no drag)
-    // EPF element-based: entered=false
-    const isHuman = entered && (!fresh || moves >= HUMAN_MOVE_THRESHOLD);
+    // Human: real cursor generates several move events before/between clicks
+    // EPF (any mode): teleports or jumps directly — zero move events
+    const isHuman = moves >= HUMAN_MOVE_THRESHOLD;
 
     if (isHuman) {
       this.result = 'human';
@@ -65,9 +53,7 @@ export class AppComponent {
       }
     }
 
-    // After a verified human click the cursor stays on the button —
-    // mark as NOT fresh so repeated clicks don't re-check move count.
-    this._freshEntry = false;
+    // Reset move count for the next click
     this._moveCnt = 0;
   }
 }
