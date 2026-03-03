@@ -77,6 +77,25 @@
         after Angular's change detection runs. No crash regardless of hover state.
       </p>
 
+      <!-- Demo buttons -->
+      <div class="demo-box">
+        <div class="demo-row">
+          <div class="demo-item">
+            <div class="demo-label">👆 Simulate EPF (no hover)</div>
+            <div class="demo-desc">Clicks without hovering ORD-003 first &mdash; exactly what EPF does</div>
+            <button class="btn-epf" (click)="simulateEpfClick(epfTargetOrder, $event)">
+              ⚡ Simulate EPF Click
+            </button>
+          </div>
+          <div class="demo-divider"></div>
+          <div class="demo-item">
+            <div class="demo-label">🖱️ Human Click (with hover)</div>
+            <div class="demo-desc">Hover over ORD-003 row below &mdash; button appears &mdash; then click it</div>
+            <span class="demo-hint">↓ hover the highlighted row below</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Error alert -->
       <div class="alert-error" *ngIf="lastError">
         <span class="alert-icon">⛔</span>
@@ -84,6 +103,15 @@
           <div class="alert-title">TypeError reproduced!</div>
           <div class="alert-msg">{{ lastError }}</div>
           <div class="alert-hint">EPF skipped mouseenter &rarr; viewBtnRef was never rendered into the DOM</div>
+        </div>
+      </div>
+
+      <!-- Success alert -->
+      <div class="alert-success" *ngIf="lastSuccess">
+        <span class="alert-icon">✅</span>
+        <div>
+          <div class="alert-title">Opened successfully!</div>
+          <div class="alert-msg">ViewChild resolved &mdash; hover triggered mouseenter, button was in DOM</div>
         </div>
       </div>
 
@@ -115,12 +143,6 @@
               </td>
               <td class="td-action">
                 <ng-container *ngIf="order.isSpecialRow">
-                  <!-- Always visible: EPF simulation button -->
-                  <button class="btn-epf" (click)="simulateEpfClick(order, $event)"
-                    title="Simulates EPF jump-click — no hover, button never in DOM">
-                    ⚡ Simulate EPF
-                  </button>
-                  <!-- Only visible after hover: the real button -->
                   <button *ngIf="isRowHovered"
                     #viewBtn class="btn-primary"
                     id="btn-view-details"
@@ -128,7 +150,7 @@
                     (click)="openModal(order, $event)">
                     View Details
                   </button>
-                  <span *ngIf="!isRowHovered" class="hover-hint">&larr; hover to reveal</span>
+                  <span *ngIf="!isRowHovered" class="hover-hint">&larr; hover row to reveal button</span>
                 </ng-container>
                 <span *ngIf="!order.isSpecialRow" class="td-dash">&mdash;</span>
               </td>

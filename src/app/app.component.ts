@@ -65,14 +65,13 @@ export class AppComponent implements OnInit, OnDestroy {
   @ViewChild('viewBtn') viewBtnRef?: ElementRef;
 
   isModalOpen = false;
-  isRowHovered = false;       // tracks whether the special row is currently hovered
+  isRowHovered = false;
   selectedOrder: Order | null = null;
 
   // ── Bug-reproduction toggle ────────────────────────────────────────────────
-  // bugMode ON  = faithful customer reproduction (hover-gated ViewChild crash)
-  // bugMode OFF = correct pattern: read ref inside setTimeout(0) after *ngIf renders
   bugMode = true;
   lastError: string | null = null;
+  lastSuccess: string | null = null;
 
   // ── Orders table ───────────────────────────────────────────────────────────
   orders: Order[] = [
@@ -152,6 +151,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.markerTimers.forEach(t => clearTimeout(t));
   }
 
+  get epfTargetOrder(): Order {
+    return this.orders.find(o => o.isSpecialRow)!;
+  }
+
   // ── Hover tracking on the special row ────────────────────────────────────
   onRowMouseEnter(order: Order): void {
     this.isRowHovered = true;
@@ -177,6 +180,7 @@ export class AppComponent implements OnInit, OnDestroy {
   openModal(order: Order, event: MouseEvent): void {
     event.stopPropagation();
     this.lastError = null;
+    this.lastSuccess = null;
 
     const hoverState = this.isRowHovered ? 'YES (hovered)' : 'NO (no prior hover — EPF path)';
     this.addLog('row-hover-state',
@@ -207,6 +211,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // Only reached if no crash (hovered correctly, or fixed mode)
     this.isModalOpen = true;
     this.selectedOrder = order;
+    this.lastSuccess = `Modal opened for ${order.id} — ViewChild resolved correctly`;
 
     if (!this.bugMode) {
       // ✅ CORRECT PATTERN:
