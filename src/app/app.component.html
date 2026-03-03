@@ -54,5 +54,66 @@
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="divider"></div>
+
+    <!-- OPTION A DEMO -->
+    <div class="option-a">
+
+      <div class="oa-header">
+        <span class="oa-badge">Option A &mdash; Fix Applied</span>
+        <h2 class="oa-title">Remove the <code>*ngIf</code> hover gate</h2>
+      </div>
+
+      <div class="oa-desc">
+        <p>
+          The <strong>root fix</strong> is to stop hiding the button behind <code>*ngIf="isRowHovered"</code>.
+          Instead, keep the button in the DOM at all times and hide it with CSS (<code>opacity: 0</code>).
+        </p>
+        <ul>
+          <li><strong>Before (bug):</strong> <code>*ngIf</code> removes the button from DOM &rarr; <code>@ViewChild</code> is <code>undefined</code> &rarr; TypeError.</li>
+          <li><strong>After (fix):</strong> button always in DOM &rarr; <code>@ViewChild</code> always resolves &rarr; EPF click succeeds.</li>
+        </ul>
+        <div class="oa-code">
+          <div class="code-bad">&#x274C; Bug &nbsp;&mdash;&nbsp; <code>&lt;button *ngIf="isRowHovered"&gt;View Details&lt;/button&gt;</code></div>
+          <div class="code-good">&#x2705; Fix &nbsp;&mdash;&nbsp; <code>&lt;button [class.hidden]="!isRowHovered"&gt;View Details&lt;/button&gt;</code></div>
+        </div>
+      </div>
+
+      <div class="oa-table">
+        <div class="oa-row-head">
+          <span>Order</span><span>Status</span><span>Action</span>
+        </div>
+        <div class="oa-row"
+          (mouseenter)="onFixRowEnter()"
+          (mouseleave)="onFixRowLeave()">
+          <span class="oa-row-id">ORD-003</span>
+          <span class="oa-row-status">Pending</span>
+          <!-- Button is ALWAYS in DOM — hidden by CSS only -->
+          <button #fixBtn
+            class="oa-btn"
+            id="fix-btn"
+            data-testid="fix-btn"
+            [class.oa-btn-visible]="isFixRowHovered"
+            (click)="onFixBtnClick()">
+            View Details
+          </button>
+        </div>
+      </div>
+
+      <p class="oa-hint">EPF target: <code>data-testid="fix-btn"</code> &nbsp;&mdash;&nbsp; button is always in DOM, EPF click will succeed.</p>
+
+      <div class="oa-result oa-result-idle" *ngIf="fixResult === null">
+        <span>&#x23F3;</span>&nbsp; Waiting for click on ORD-003&hellip;
+      </div>
+      <div class="oa-result oa-result-pass" *ngIf="fixResult === 'pass'">
+        <span>&#x2705;</span>&nbsp; <strong>PASS</strong> &mdash; <code>@ViewChild</code> resolved. Width = <strong>{{ fixWidth }}px</strong>. EPF click succeeded!
+      </div>
+      <div class="oa-result oa-result-fail" *ngIf="fixResult === 'fail'">
+        <span>&#x274C;</span>&nbsp; <strong>FAIL</strong> &mdash; TypeError: {{ fixError }}
+      </div>
+
+    </div>
+
   </div>
 </div>

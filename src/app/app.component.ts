@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild, ElementRef } from '@angular/core';
 
 // Minimum mousemove events required to qualify as a real human drag to button
 const HUMAN_MOVE_THRESHOLD = 3;
@@ -19,6 +19,31 @@ export class AppComponent {
   result: string | null = null;
   lastError: string | null = null;
   debugInfo: string | null = null;
+
+  // Option A fix demo
+  @ViewChild('fixBtn') fixBtnRef?: ElementRef;
+  isFixRowHovered = false;
+  fixResult: 'pass' | 'fail' | null = null;
+  fixError: string | null = null;
+  fixWidth: number | null = null;
+
+  onFixRowEnter(): void { this.isFixRowHovered = true; }
+  onFixRowLeave(): void { this.isFixRowHovered = false; }
+
+  onFixBtnClick(): void {
+    this.fixResult = null;
+    this.fixError = null;
+    this.fixWidth = null;
+    try {
+      // @ViewChild ALWAYS resolves because button is always in DOM
+      const width = this.fixBtnRef!.nativeElement.getBoundingClientRect().width;
+      this.fixWidth = Math.round(width);
+      this.fixResult = 'pass';
+    } catch (err: any) {
+      this.fixError = err.message;
+      this.fixResult = 'fail';
+    }
+  }
 
   onBtnMouseEnter(): void {
     // Start counting fresh on every entry
