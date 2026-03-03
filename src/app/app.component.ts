@@ -30,6 +30,39 @@ export class AppComponent {
   onFixRowEnter(): void { this.isFixRowHovered = true; }
   onFixRowLeave(): void { this.isFixRowHovered = false; }
 
+  // Option B defensive coding demo
+  @ViewChild('obBtn') obBtnRef?: ElementRef;
+  isObRowHovered = false;
+  obResult: 'pass' | 'guarded' | null = null;
+  obWidth: number | null = null;
+
+  onObRowEnter(): void { this.isObRowHovered = true; }
+  onObRowLeave(): void { this.isObRowHovered = false; }
+
+  onObBtnClick(): void {
+    this.obResult = null;
+    this.obWidth = null;
+    // Guarded read — no crash even if ref is undefined
+    if (this.obBtnRef) {
+      this.obWidth = Math.round(this.obBtnRef.nativeElement.getBoundingClientRect().width);
+      this.obResult = 'pass';
+    } else {
+      this.obResult = 'guarded'; // silently skipped — no TypeError
+    }
+  }
+
+  onObSimulateEpf(): void {
+    // Simulate EPF: call handler directly without hover — obBtnRef will be undefined
+    this.obResult = null;
+    this.obWidth = null;
+    if (this.obBtnRef) {
+      this.obWidth = Math.round(this.obBtnRef.nativeElement.getBoundingClientRect().width);
+      this.obResult = 'pass';
+    } else {
+      this.obResult = 'guarded';
+    }
+  }
+
   onFixBtnClick(): void {
     this.fixResult = null;
     this.fixError = null;

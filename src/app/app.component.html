@@ -115,5 +115,76 @@
 
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="divider"></div>
+
+    <!-- OPTION B DEMO -->
+    <div class="option-b">
+
+      <div class="ob-header">
+        <span class="ob-badge">Option B &mdash; Defensive Coding</span>
+        <h2 class="ob-title">Guard the <code>@ViewChild</code> read</h2>
+      </div>
+
+      <div class="ob-desc">
+        <p>
+          If the <code>*ngIf</code> hover gate <strong>must stay</strong>, guard the <code>@ViewChild</code> reference before accessing it.
+          This prevents the unhandled TypeError &mdash; but EPF’s click will still silently do nothing, because the button is not in the DOM.
+        </p>
+        <div class="ob-code">
+          <div class="code-bad">&#x274C; Before &mdash;
+            <code>const w = this.viewBtnRef.nativeElement.getBoundingClientRect().width;</code>
+          </div>
+          <div class="code-warn">&#x26A0;&#xFE0F; After &mdash;
+            <code>if (this.viewBtnRef) &#123; const w = this.viewBtnRef.nativeElement.getBoundingClientRect().width; &#125;</code>
+          </div>
+        </div>
+        <p class="ob-caveat">
+          &#x26A0;&#xFE0F; <strong>This is not a full fix.</strong>
+          The app no longer crashes, but EPF’s click is silently ignored &mdash; the modal never opens.
+        </p>
+      </div>
+
+      <div class="ob-table">
+        <div class="ob-row-head">
+          <span>Order</span><span>Status</span><span>Action</span>
+        </div>
+        <div class="ob-row"
+          (mouseenter)="onObRowEnter()"
+          (mouseleave)="onObRowLeave()">
+          <span class="ob-row-id">ORD-003</span>
+          <span class="ob-row-status">Pending</span>
+          <!-- Button is behind *ngIf — NOT in DOM until hovered -->
+          <button *ngIf="isObRowHovered"
+            #obBtn
+            class="ob-btn"
+            id="ob-btn"
+            data-testid="ob-btn"
+            (click)="onObBtnClick()">View Details</button>
+          <span *ngIf="!isObRowHovered" class="ob-no-btn">(hover to show button)</span>
+        </div>
+      </div>
+
+      <button class="sim-epf-btn" (click)="onObSimulateEpf()">
+        &#x26A1; Simulate EPF Click (no hover)
+      </button>
+      <p class="oa-hint">Simulates EPF calling the handler directly &mdash; <code>@ViewChild</code> is <code>undefined</code>, guarded code silently skips.</p>
+
+      <div class="ob-result ob-result-idle" *ngIf="obResult === null">
+        <span>&#x23F3;</span>&nbsp; Waiting&hellip;
+      </div>
+      <div class="ob-result ob-result-pass" *ngIf="obResult === 'pass'">
+        <span>&#x2705;</span>&nbsp; <strong>PASS</strong> &mdash; Human hovered first. <code>@ViewChild</code> resolved. Width = <strong>{{ obWidth }}px</strong>.
+      </div>
+      <div class="ob-result ob-result-guarded" *ngIf="obResult === 'guarded'">
+        <span>&#x26A0;&#xFE0F;</span>&nbsp;
+        <div>
+          <strong>NO CRASH</strong> &mdash; guard prevented TypeError. But <code>@ViewChild</code> was <code>undefined</code> &mdash; modal did not open.
+          <div class="ob-guard-code">if (this.viewBtnRef) &#123; &hellip; &#125; &nbsp;&#x2190; skipped silently</div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 </div>
