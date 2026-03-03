@@ -11,7 +11,9 @@ const HUMAN_MOVE_THRESHOLD = 3;
 
 export class AppComponent {
 
-  // Counts mousemove events since the last click (or page load)
+  // Set to true once enough mousemove events confirm a real human dragged here.
+  // Stays true until the cursor leaves the button — repeated clicks stay green.
+  private _verifiedHuman = false;
   private _moveCnt = 0;
 
   result: string | null = null;
@@ -19,28 +21,30 @@ export class AppComponent {
   debugInfo: string | null = null;
 
   onBtnMouseEnter(): void {
-    // entering fresh — reset so only moves AFTER entry count
+    // Start counting fresh on every entry
     this._moveCnt = 0;
   }
 
   onBtnMouseLeave(): void {
+    // Cursor left — must re-verify on next entry
+    this._verifiedHuman = false;
     this._moveCnt = 0;
   }
 
   onBtnMouseMove(): void {
     this._moveCnt++;
+    if (this._moveCnt >= HUMAN_MOVE_THRESHOLD) {
+      this._verifiedHuman = true;  // promoted to verified — stays true until leave
+    }
   }
 
   onBtnClick(): void {
     this.lastError = null;
-    const moves = this._moveCnt;
-    this.debugInfo = `mousemove count=${moves}`;
+    this.debugInfo = `verified=${this._verifiedHuman}, mousemove count=${this._moveCnt}`;
 
-    // Human: real cursor generates several move events before/between clicks
-    // EPF (any mode): teleports or jumps directly — zero move events
-    const isHuman = moves >= HUMAN_MOVE_THRESHOLD;
-
-    if (isHuman) {
+    // _verifiedHuman is true  → human moved cursor here naturally → PASS
+    // _verifiedHuman is false → EPF teleported (0 move events) → FAIL
+    if (this._verifiedHuman) {
       this.result = 'human';
     } else {
       this.result = 'epf';
@@ -52,8 +56,8 @@ export class AppComponent {
         this.lastError = err.message;
       }
     }
-
-    // Reset move count for the next click
+    // Do NOT reset _verifiedHuman here — cursor is still on button, repeated clicks stay valid
+    // Reset move counter only (informational)
     this._moveCnt = 0;
   }
 }
