@@ -1,229 +1,180 @@
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!--  Angular Mouse Event Tester – EPF / SenseTalk RDP Diagnostic Tool      -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div class="shell">
+<!-- Angular Mouse Event Tester – EPF / SenseTalk RDP Diagnostic -->
+<div class="page">
 
-  <!-- NAV BAR -->
-  <nav class="navbar">
-    <div class="nav-brand">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 2C8 2 5 5 5 9v7l2 4h10l2-4V9c0-4-3-7-7-7z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="15" r=".5" fill="currentColor"/>
-      </svg>
-      <span class="nav-title">Mouse Event Tester</span>
-      <span class="nav-badge">Angular 14 · EPF Diagnostic</span>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-brand">
+      <span class="header-title">Mouse Event Tester</span>
+      <span class="header-sub">EPF / SenseTalk RDP Diagnostic</span>
     </div>
-    <div class="nav-hud">
-      <div class="hud-item">
-        <span class="hud-label">Pointer</span>
-        <span class="hud-value" [class.hud-active]="currentPointerType !== '—'">{{ currentPointerType }}</span>
-      </div>
-      <div class="hud-divider"></div>
-      <div class="hud-item">
-        <span class="hud-label">Position</span>
-        <span class="hud-value mono">{{ lastPos.x }}, {{ lastPos.y }}</span>
-      </div>
-      <div class="hud-divider"></div>
-      <div class="hud-item">
-        <span class="hud-label">Clicks</span>
-        <span class="hud-value hud-accent">{{ stats.click }}</span>
-      </div>
+    <div class="header-stats">
+      <span class="stat"><span class="stat-label">Pointer</span><span class="stat-val">{{ currentPointerType }}</span></span>
+      <span class="stat"><span class="stat-label">Clicks</span><span class="stat-val accent">{{ stats.click }}</span></span>
+      <span class="stat"><span class="stat-label">Position</span><span class="stat-val mono">{{ lastPos.x }}, {{ lastPos.y }}</span></span>
     </div>
-  </nav>
+  </header>
 
-  <div class="content">
+  <div class="body">
 
-    <!-- ── LEFT COLUMN ───────────────────────────────────────────────────── -->
-    <aside class="sidebar">
-
-      <!-- Click Canvas -->
-      <div class="panel">
-        <div class="panel-header">
-          <h2 class="panel-title">
-            <span class="panel-dot dot-blue"></span>Click Canvas
-          </h2>
-          <button class="btn-link" (click)="clearMarkers()">Clear</button>
-        </div>
-        <div class="canvas" (contextmenu)="$event.preventDefault()">
-          <p class="canvas-hint" *ngIf="markers.length === 0">
-            Click anywhere &bull; Left, right, or middle button
-          </p>
-          <div *ngFor="let m of markers; trackBy: trackById"
-            class="dot"
-            [class.dot-left]="m.button === 0"
-            [class.dot-right]="m.button === 2"
-            [class.dot-mid]="m.button === 1"
-            [style.left.px]="m.x" [style.top.px]="m.y">
+    <!-- HOW TO USE -->
+    <section class="card card-guide">
+      <h2 class="card-title">How to Use This Tool</h2>
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num">1</span>
+          <div>
+            <strong>Verify Mouse Events</strong> — check the <em>Event Counters</em> and <em>Live Event Log</em> below.
+            Every click anywhere on the page is recorded with its type, position, and pointer device.
+            A real mouse produces the full chain: <code>pointerdown</code> &rarr; <code>mousedown</code> &rarr; <code>mouseup</code> &rarr; <code>click</code>.
+            Confirm EPF triggers the same sequence.
           </div>
-        </div>
-        <div class="canvas-legend">
-          <span class="legend-item"><i class="dot-swatch dot-left"></i>Left</span>
-          <span class="legend-item"><i class="dot-swatch dot-right"></i>Right</span>
-          <span class="legend-item"><i class="dot-swatch dot-mid"></i>Middle</span>
+        </li>
+        <li class="step">
+          <span class="step-num">2</span>
+          <div>
+            <strong>EPF Bug Reproduction</strong> — find row <strong>ORD-003</strong> in the table.
+            Its "View Details" button only appears <em>after you hover</em> that row (guarded by <code>*ngIf="isRowHovered"</code>).
+            <ul class="step-tips">
+              <li><span class="tag tag-bug">Bug Mode ON</span> — native mouse works (hover first &rarr; button appears &rarr; click opens modal). EPF jump-clicks <em>without</em> hover &rarr; button is never in the DOM &rarr; <code>@ViewChild</code> is <code>undefined</code> &rarr; <strong>TypeError crash</strong>.</li>
+              <li><span class="tag tag-fix">Fixed Mode</span> — the race condition is patched; EPF can now click without crashing.</li>
+            </ul>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-num">3</span>
+          <div>
+            <strong>SenseTalk / EPF Targeting</strong> — use these test IDs in your script:
+            <ul class="step-tips">
+              <li>Row: <code>data-testid="modal-trigger-row"</code></li>
+              <li>Button: <code>data-testid="btn-view-details"</code></li>
+            </ul>
+            Toggle bug mode to observe whether the ViewChild crash is reproduced.
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- BUG REPRODUCTION TABLE -->
+    <section class="card" [class.card-bug]="bugMode" [class.card-fix]="!bugMode">
+      <div class="card-header">
+        <h2 class="card-title">EPF Bug Reproduction &mdash; ViewChild Race Condition</h2>
+        <label class="toggle">
+          <input type="checkbox" [(ngModel)]="bugMode">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <span class="toggle-text" [class.text-bug]="bugMode" [class.text-fix]="!bugMode">
+            {{ bugMode ? '🐛 Bug Mode ON' : '✅ Fixed Mode' }}
+          </span>
+        </label>
+      </div>
+
+      <p class="card-desc" *ngIf="bugMode">
+        <strong>Bug Mode:</strong> ORD-003's button is inside <code>*ngIf="isRowHovered"</code>.
+        A native mouse always hovers before clicking (button renders &rarr; <code>@ViewChild</code> resolves &rarr; click works).
+        EPF jump-clicks without hover &rarr; button never in DOM &rarr; <code>viewBtnRef</code> is <code>undefined</code> &rarr; <span class="err-text">TypeError</span>.
+      </p>
+      <p class="card-desc" *ngIf="!bugMode">
+        <strong>Fixed Mode:</strong> The modal opens first, then reads the ViewChild inside <code>setTimeout(0)</code>
+        after Angular's change detection runs. No crash regardless of hover state.
+      </p>
+
+      <!-- Error alert -->
+      <div class="alert-error" *ngIf="lastError">
+        <span class="alert-icon">⛔</span>
+        <div>
+          <div class="alert-title">TypeError reproduced!</div>
+          <div class="alert-msg">{{ lastError }}</div>
+          <div class="alert-hint">EPF skipped mouseenter &rarr; viewBtnRef was never rendered into the DOM</div>
         </div>
       </div>
 
-      <!-- Event Counters -->
-      <div class="panel">
-        <div class="panel-header">
-          <h2 class="panel-title">
-            <span class="panel-dot dot-green"></span>Event Counters
-          </h2>
-          <button class="btn-link" (click)="resetStats()">Reset</button>
-        </div>
-        <div class="counters">
-          <div class="counter" *ngFor="let s of [
-            {label:'pointerdown', val: stats.pointerdown, color:'blue'},
-            {label:'mousedown',   val: stats.mousedown,   color:'indigo'},
-            {label:'mouseup',     val: stats.mouseup,     color:'violet'},
-            {label:'click',       val: stats.click,       color:'green'},
-            {label:'dblclick',    val: stats.dblclick,    color:'amber'},
-            {label:'contextmenu', val: stats.contextmenu, color:'rose'}
-          ]" [attr.data-color]="s.color">
-            <span class="counter-val">{{ s.val }}</span>
-            <span class="counter-label">{{ s.label }}</span>
-          </div>
+      <!-- Orders table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Product</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let order of orders"
+              [class.row-special]="order.isSpecialRow"
+              [class.row-hovered]="order.isSpecialRow && isRowHovered"
+              (mouseenter)="order.isSpecialRow && onRowMouseEnter(order)"
+              (mouseleave)="order.isSpecialRow && onRowMouseLeave()"
+              [attr.data-order-id]="order.id"
+              [attr.data-testid]="order.isSpecialRow ? 'modal-trigger-row' : null">
+              <td class="td-mono">{{ order.id }}</td>
+              <td>{{ order.customer }}</td>
+              <td>{{ order.product }}</td>
+              <td>
+                <span class="chip" [ngClass]="'chip-' + order.status.toLowerCase()">{{ order.status }}</span>
+              </td>
+              <td class="td-action">
+                <button *ngIf="order.isSpecialRow && isRowHovered"
+                  #viewBtn class="btn-primary"
+                  id="btn-view-details"
+                  data-testid="btn-view-details"
+                  (click)="openModal(order, $event)">
+                  View Details
+                </button>
+                <span *ngIf="order.isSpecialRow && !isRowHovered" class="hover-hint">
+                  &larr; hover row to reveal
+                </span>
+                <span *ngIf="!order.isSpecialRow" class="td-dash">&mdash;</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- EVENT COUNTERS -->
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">Event Counters</h2>
+        <button class="btn-ghost" (click)="resetStats()">Reset</button>
+      </div>
+      <div class="counters">
+        <div class="counter" *ngFor="let s of [
+          {label:'pointerdown', val: stats.pointerdown},
+          {label:'mousedown',   val: stats.mousedown},
+          {label:'mouseup',     val: stats.mouseup},
+          {label:'click',       val: stats.click},
+          {label:'dblclick',    val: stats.dblclick},
+          {label:'contextmenu', val: stats.contextmenu}
+        ]">
+          <span class="counter-val">{{ s.val }}</span>
+          <span class="counter-label">{{ s.label }}</span>
         </div>
       </div>
+    </section>
 
-    </aside>
-
-    <!-- ── RIGHT COLUMN ──────────────────────────────────────────────────── -->
-    <main class="main-col">
-
-      <!-- Bug Reproduction Panel -->
-      <div class="panel" [class.panel-bug]="bugMode" [class.panel-fixed]="!bugMode">
-        <div class="panel-header">
-          <h2 class="panel-title">
-            <span class="panel-dot" [class.dot-red]="bugMode" [class.dot-green]="!bugMode"></span>
-            EPF Bug Reproduction &mdash; ViewChild Race Condition
-          </h2>
-          <label class="toggle">
-            <input type="checkbox" [(ngModel)]="bugMode">
-            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-            <span class="toggle-text">{{ bugMode ? 'Bug mode' : 'Fixed mode' }}</span>
-          </label>
+    <!-- LIVE EVENT LOG -->
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">Live Event Log</h2>
+        <button class="btn-ghost" (click)="clearLog()">Clear</button>
+      </div>
+      <div class="log">
+        <div class="log-empty" *ngIf="eventLog.length === 0">
+          No events yet &mdash; interact with the page to start recording.
         </div>
-
-        <!-- Mode explanation -->
-        <div class="explainer" [class.explainer-bug]="bugMode" [class.explainer-fix]="!bugMode">
-          <ng-container *ngIf="bugMode">
-            <p class="explainer-heading">🐛 &nbsp;Reproducing the customer crash</p>
-            <div class="flow">
-              <div class="flow-step flow-ok">
-                <span class="flow-label">Native mouse</span>
-                <span class="flow-arrow">Hover row</span>
-                <span class="flow-arrow"><code>mouseenter</code></span>
-                <span class="flow-arrow">Button renders</span>
-                <span class="flow-arrow"><code>@ViewChild</code> resolves</span>
-                <span class="flow-result ok">Click ✅ works</span>
-              </div>
-              <div class="flow-step flow-err">
-                <span class="flow-label">EPF / SenseTalk</span>
-                <span class="flow-arrow">Jump-click</span>
-                <span class="flow-arrow">No <code>mouseenter</code></span>
-                <span class="flow-arrow">Button not in DOM</span>
-                <span class="flow-arrow"><code>@ViewChild</code> = undefined</span>
-                <span class="flow-result err">TypeError ❌</span>
-              </div>
-            </div>
-          </ng-container>
-          <ng-container *ngIf="!bugMode">
-            <p class="explainer-heading">✅ &nbsp;Fixed pattern applied</p>
-            <p class="explainer-body">
-              Set <code>isModalOpen = true</code> first so Angular renders the element via
-              <code>*ngIf</code>, then read its dimensions inside <code>setTimeout(0)</code>
-              after change detection has run.
-            </p>
-          </ng-container>
-        </div>
-
-        <!-- Error alert -->
-        <div class="alert alert-error" *ngIf="lastError">
-          <div class="alert-icon">⛔</div>
-          <div class="alert-body">
-            <p class="alert-title">Uncaught TypeError</p>
-            <p class="alert-msg">{{ lastError }}</p>
-            <p class="alert-sub">at openModal() — EPF skipped mouseenter, viewBtnRef was never rendered</p>
-          </div>
-        </div>
-
-        <!-- Orders table -->
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Customer</th>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let order of orders"
-                [class.row-special]="order.isSpecialRow"
-                [class.row-hovered]="order.isSpecialRow && isRowHovered"
-                (mouseenter)="order.isSpecialRow && onRowMouseEnter(order)"
-                (mouseleave)="order.isSpecialRow && onRowMouseLeave()"
-                [attr.data-order-id]="order.id"
-                [attr.data-testid]="order.isSpecialRow ? 'modal-trigger-row' : null">
-                <td class="td-mono">{{ order.id }}</td>
-                <td>{{ order.customer }}</td>
-                <td>{{ order.product }}</td>
-                <td class="td-num">{{ order.qty }}</td>
-                <td class="td-num">{{ order.amount | currency }}</td>
-                <td>
-                  <span class="chip" [ngClass]="'chip-' + order.status.toLowerCase()">
-                    {{ order.status }}
-                  </span>
-                </td>
-                <td class="td-action">
-                  <button *ngIf="order.isSpecialRow && isRowHovered"
-                    #viewBtn class="btn-primary"
-                    id="btn-view-details" data-testid="btn-view-details"
-                    (click)="openModal(order, $event)">
-                    View Details
-                  </button>
-                  <span *ngIf="order.isSpecialRow && !isRowHovered"
-                    class="hover-cue" data-testid="hover-hint-ord003">
-                    Hover to reveal
-                  </span>
-                  <span *ngIf="!order.isSpecialRow" class="td-dash">&mdash;</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div *ngFor="let e of eventLog; trackBy: trackById"
+          class="log-row"
+          [class.log-success]="e.level === 'success'"
+          [class.log-warn]="e.level === 'warn'"
+          [class.log-error]="e.level === 'error'">
+          <span class="log-time">{{ e.time }}</span>
+          <span class="log-type">{{ e.type }}</span>
+          <span class="log-msg">{{ e.message }}</span>
         </div>
       </div>
+    </section>
 
-      <!-- Live Event Log -->
-      <div class="panel panel-log">
-        <div class="panel-header">
-          <h2 class="panel-title">
-            <span class="panel-dot dot-amber"></span>Live Event Log
-          </h2>
-          <button class="btn-link" (click)="clearLog()">Clear</button>
-        </div>
-        <div class="log">
-          <div class="log-empty" *ngIf="eventLog.length === 0">
-            No events yet &mdash; interact with the page to start recording.
-          </div>
-          <div *ngFor="let e of eventLog; trackBy: trackById"
-            class="log-row"
-            [class.log-success]="e.level === 'success'"
-            [class.log-warn]="e.level === 'warn'"
-            [class.log-error]="e.level === 'error'">
-            <span class="log-time">{{ e.time }}</span>
-            <span class="log-type">{{ e.type }}</span>
-            <span class="log-msg">{{ e.message }}</span>
-          </div>
-        </div>
-      </div>
-
-    </main>
   </div>
 </div>
 
@@ -239,38 +190,25 @@
     </div>
     <div class="modal-body" #modalBody *ngIf="selectedOrder">
       <div class="detail-grid">
-        <div class="detail-row">
-          <span class="detail-label">Customer</span>
-          <span class="detail-val">{{ selectedOrder.customer }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Product</span>
-          <span class="detail-val">{{ selectedOrder.product }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Quantity</span>
-          <span class="detail-val">{{ selectedOrder.qty }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Amount</span>
-          <span class="detail-val strong">{{ selectedOrder.amount | currency }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Status</span>
-          <span class="detail-val">
-            <span class="chip" [ngClass]="'chip-' + selectedOrder.status.toLowerCase()">
-              {{ selectedOrder.status }}
-            </span>
-          </span>
-        </div>
-        <div class="detail-row detail-row-full">
-          <span class="detail-label">Notes</span>
-          <span class="detail-val muted">{{ selectedOrder.details }}</span>
-        </div>
+        <div class="detail-row"><span class="detail-label">Customer</span><span class="detail-val">{{ selectedOrder.customer }}</span></div>
+        <div class="detail-row"><span class="detail-label">Product</span><span class="detail-val">{{ selectedOrder.product }}</span></div>
+        <div class="detail-row"><span class="detail-label">Quantity</span><span class="detail-val">{{ selectedOrder.qty }}</span></div>
+        <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-val strong">{{ selectedOrder.amount | currency }}</span></div>
+        <div class="detail-row"><span class="detail-label">Status</span><span class="detail-val"><span class="chip" [ngClass]="'chip-' + selectedOrder.status.toLowerCase()">{{ selectedOrder.status }}</span></span></div>
+        <div class="detail-row detail-row-full"><span class="detail-label">Notes</span><span class="detail-val muted">{{ selectedOrder.details }}</span></div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn-primary" (click)="closeModal()">Close</button>
     </div>
   </div>
+</div>
+
+<!-- Click dot markers -->
+<div *ngFor="let m of markers; trackBy: trackById"
+  class="dot"
+  [class.dot-left]="m.button === 0"
+  [class.dot-right]="m.button === 2"
+  [class.dot-mid]="m.button === 1"
+  [style.left.px]="m.x" [style.top.px]="m.y">
 </div>
