@@ -199,10 +199,12 @@ export class AppComponent implements OnInit, OnDestroy {
           `⛔ TypeError: ${err.message}  ← EPF skipped hover, viewBtnRef is undefined`,
           'error');
         console.error('%c⛔ Customer bug reproduced:', 'color:red;font-weight:bold', err);
+        // ⚠ Crash stops execution — modal never opens (faithful to real behaviour)
+        return;
       }
     }
 
-    // Open the modal regardless
+    // Only reached if no crash (hovered correctly, or fixed mode)
     this.isModalOpen = true;
     this.selectedOrder = order;
 
